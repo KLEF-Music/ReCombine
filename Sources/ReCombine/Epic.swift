@@ -15,10 +15,29 @@ public struct Epic<S> {
     /// When true, the emitted actions from the `source` Action Publisher will be dispatched to the store.  If false, the emitted actions will be ignored.
     public let dispatch: Bool
     /// A closure with takes in a State Publisher , an Action Publisher and returns an Action Publisher
-    public let source: (CurrentValueSubject<S, Never>, AnyPublisher<Action, Never>) -> AnyPublisher<Action, Never>
+    public let source: (StatePublisher<S>, AnyPublisher<Action, Never>) -> AnyPublisher<Action, Never>
 
-    public init(dispatch: Bool, _ source: @escaping (CurrentValueSubject<S, Never>, AnyPublisher<Action, Never>) -> AnyPublisher<Action, Never>) {
+    public init(dispatch: Bool, _ source: @escaping (StatePublisher<S>, AnyPublisher<Action, Never>) -> AnyPublisher<Action, Never>) {
         self.dispatch = dispatch
         self.source = source
     }
+}
+
+public struct StatePublisher<S> {
+    let changes: AnyPublisher<S, Never>
+    let state: () -> S
+}
+
+public extension StatePublisher{
+
+    init(storeSubject: CurrentValueSubject<S, Never>) {
+        self.changes = storeSubject.eraseToAnyPublisher()
+        self.state = { return storeSubject.value }
+    }
+
+    #if swift(>=5.2)
+    func callAsFunction() -> S {
+        return state()
+    }
+    #endif
 }
