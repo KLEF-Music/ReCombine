@@ -24,11 +24,19 @@ public struct Epic<S> {
 }
 
 public struct StatePublisher<S> {
-    let changes: AnyPublisher<S, Never>
-    let state: () -> S
+    public let changes: AnyPublisher<S, Never>
+    public let state: () -> S
+
+    public init(
+        changes: AnyPublisher<S, Never>,
+        state: @escaping () -> S) {
+        self.changes = changes
+        self.state = state
+    }
+
 }
 
-public extension StatePublisher{
+public extension StatePublisher  {
 
     init(storeSubject: CurrentValueSubject<S, Never>) {
         self.changes = storeSubject.eraseToAnyPublisher()
@@ -40,4 +48,6 @@ public extension StatePublisher{
         return state()
     }
     #endif
+    
 }
+
