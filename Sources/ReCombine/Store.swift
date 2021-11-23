@@ -214,7 +214,7 @@ open class Store<S>: Publisher {
     /// ```
     /// - Parameter effect: action based side-effect.  It is processed until the returned `AnyCancellable` instance is cancelled.
     open func register(_ epic: Epic<S>) -> AnyCancellable {
-        return epic.source(stateSubject, actionSubject.eraseToAnyPublisher())
+        return epic.source(StatePublisher(storeSubject: stateSubject), actionSubject.eraseToAnyPublisher())
             .filter { _ in return epic.dispatch }
             .sink(receiveValue: { [weak self] action in self?.dispatch(action: action) })
     }
