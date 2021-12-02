@@ -57,6 +57,15 @@ public extension StatePublisher  {
     
 }
 
+
+extension Epic {
+
+    func mapState<ParentState>(toLocalState: KeyPath<ParentState, S>) -> Epic<ParentState> {
+        forKey(toLocalState: toLocalState, use: self)
+    }
+    
+}
+
 public func forKey<SubState, ParentState>(
                 toLocalState: KeyPath<ParentState, SubState>,
                 use: Epic<SubState>
