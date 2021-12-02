@@ -44,7 +44,7 @@ class CounterViewModel: ObservableObject {
         store.select(getCountString)
             .assign(to: \.countString, on: self)
             .store(in: &cancellableSet)
-        let showAlertOnReset = Effect(dispatch: false) { actions in
+        let showAlertOnReset = Epic<CounterState>(dispatch: false) { actions in
             actions.ofType(Reset.self)
                 .handleEvents(receiveOutput: { [weak self] _ in
                     self?.showResetAlert = true

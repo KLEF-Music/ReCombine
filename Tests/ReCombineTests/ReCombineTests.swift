@@ -77,34 +77,34 @@ final class ReCombineTests: XCTestCase {
     struct Action5: Action {}
     struct Action6: Action {}
     
-    static let doesDispatch = Effect(dispatch: true) { action in
+    static let doesDispatch = Epic<ScoreboardState>(dispatch: true) { action in
         action.ofType(Action1.self)
             .map { _ in Action2() }
             .eraseActionType()
             .eraseToAnyPublisher()
     }
     
-    static let doesNotDispatch = Effect(dispatch: false) { action in
+    static let doesNotDispatch = Epic<ScoreboardState>(dispatch: false) { action in
         action.ofType(Action2.self)
             .map { _ in ResetScore() }
             .eraseActionType()
             .eraseToAnyPublisher()
     }
     
-    static let registerThisLater = Effect(dispatch: true) { action in
+    static let registerThisLater = Epic<ScoreboardState> { action in
         action.ofType(Home.Score.self)
             .map { _ in Away.Score() }
             .eraseActionType()
             .eraseToAnyPublisher()
     }
 
-    var store = Store(reducer: ReCombineTests.reducer, initialState: ScoreboardState(), effects: [ReCombineTests.doesDispatch, ReCombineTests.doesNotDispatch])
+    var store = Store(reducer: ReCombineTests.reducer, initialState: ScoreboardState(), epics: [ReCombineTests.doesDispatch, ReCombineTests.doesNotDispatch])
     
     var cancellable: AnyCancellable?
     var cancellableSet: Set<AnyCancellable> = []
     
     override func setUp() {
-        store = Store(reducer: ReCombineTests.reducer, initialState: ScoreboardState(), effects: [ReCombineTests.doesDispatch, ReCombineTests.doesNotDispatch])
+        store = Store(reducer: ReCombineTests.reducer, initialState: ScoreboardState(), epics: [ReCombineTests.doesDispatch, ReCombineTests.doesNotDispatch])
     }
     
     // MARK: - Store

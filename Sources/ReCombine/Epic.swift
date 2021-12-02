@@ -17,9 +17,14 @@ public struct Epic<S> {
     /// A closure with takes in a State Publisher , an Action Publisher and returns an Action Publisher
     public let source: (StatePublisher<S>, AnyPublisher<Action, Never>) -> AnyPublisher<Action, Never>
 
-    public init(dispatch: Bool, _ source: @escaping (StatePublisher<S>, AnyPublisher<Action, Never>) -> AnyPublisher<Action, Never>) {
+    public init(dispatch: Bool = true, _ source: @escaping (StatePublisher<S>, AnyPublisher<Action, Never>) -> AnyPublisher<Action, Never>) {
         self.dispatch = dispatch
         self.source = source
+    }
+
+    public init(dispatch: Bool = true, _ source: @escaping (AnyPublisher<Action, Never>) -> AnyPublisher<Action, Never>) {
+        self.dispatch = dispatch
+        self.source = { _, actions in source(actions) }
     }
 }
 
