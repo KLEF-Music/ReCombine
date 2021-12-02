@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import CasePaths
 
 /// Configures an Epic from a source function and a dispatch option.
 ///
@@ -56,3 +57,13 @@ public extension StatePublisher  {
     
 }
 
+public func forKey<SubState, ParentState>(
+                toLocalState: KeyPath<ParentState, SubState>,
+                use: Epic<SubState>
+) -> Epic<ParentState>{
+        Epic<ParentState>(dispatch: use.dispatch)  { state, actions in
+            let subState = state.changes.map{ $0[keyPath: toLocalState] }.eraseToAnyPublisher()
+            let subStatePublisher = StatePublisher(changes: subState, state: { state()[keyPath: toLocalState] })
+            return use.source(subStatePublisher, actions)
+        }
+}
