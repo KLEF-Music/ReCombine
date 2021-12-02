@@ -64,6 +64,10 @@ extension Epic {
         forKey(toLocalState: toLocalState, use: self)
     }
 
+    public func mapState<ParentState>(toLocalState: @escaping (ParentState) -> S) -> Epic<ParentState> {
+        forKey(toLocalState: toLocalState, use: self)
+    }
+
 }
 
 public func forKey<SubState, ParentState>(
@@ -73,6 +77,17 @@ public func forKey<SubState, ParentState>(
         Epic<ParentState>(dispatch: use.dispatch)  { state, actions in
             let subState = state.changes.map{ $0[keyPath: toLocalState] }.eraseToAnyPublisher()
             let subStatePublisher = StatePublisher(changes: subState, state: { state()[keyPath: toLocalState] })
+            return use.source(subStatePublisher, actions)
+        }
+}
+
+public func forKey<SubState, ParentState>(
+                toLocalState: @escaping (ParentState) -> SubState,
+                use: Epic<SubState>
+) -> Epic<ParentState>{
+        Epic<ParentState>(dispatch: use.dispatch)  { state, actions in
+            let subState = state.changes.map{ toLocalState($0) }.eraseToAnyPublisher()
+            let subStatePublisher = StatePublisher(changes: subState, state: { toLocalState(state()) })
             return use.source(subStatePublisher, actions)
         }
 }
