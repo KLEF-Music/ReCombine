@@ -73,12 +73,24 @@ public func forKey<S, K>(_ keyPath: WritableKeyPath<S, K>, use reducer: @escapin
 }
 
 
-public typealias TypedReducer<S, A: Action>  =  (inout S, A) -> Void
+public typealias TypedReducer<S, A>  =  (inout S, A) -> Void
 
-public func on<S, SubAction>(_ action: SubAction.Type, use reducer: @escaping TypedReducer<S, SubAction>) -> ReducerFn<S> {
+public func typedReducer<S, SubAction>(_ reducer: @escaping TypedReducer<S, SubAction>) -> ReducerFn<S> {
     return { state, action in
         if let typeAction = action  as? SubAction {
             reducer(&state, typeAction)
         }
     }
 }
+
+public func typedReducer<S, ParentAction: Action, SubAction>(
+    casePath: CasePath<ParentAction, SubAction>, _
+    reducer: @escaping TypedReducer<S, SubAction>
+) -> ReducerFn<S> {
+    return typedReducer { (state, action: ParentAction)  in
+        if let typeAction = casePath.extract(from: action) {
+            reducer(&state, typeAction)
+        }
+    }
+}
+
