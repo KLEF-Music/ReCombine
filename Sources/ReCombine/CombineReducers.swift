@@ -71,3 +71,14 @@ public func forKey<S, K>(_ keyPath: WritableKeyPath<S, K>, use reducer: @escapin
         reducer(&state[keyPath: keyPath], action)
     }
 }
+
+
+public typealias TypedReducer<S, A: Action>  =  (inout S, A) -> Void
+
+public func on<S, SubAction>(_ action: SubAction.Type, use reducer: @escaping TypedReducer<S, SubAction>) -> ReducerFn<S> {
+    return { state, action in
+        if let typeAction = action  as? SubAction {
+            reducer(&state, typeAction)
+        }
+    }
+}
