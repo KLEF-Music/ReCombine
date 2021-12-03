@@ -19,17 +19,14 @@ final class ReCombineTests: XCTestCase {
         struct State: Equatable {
             var score = 0
         }
-        static func reducer(state: State, action: Action) -> State {
-            var state = state
+        static func reducer(state: inout State, action: Action) {
             switch action {
                 case _ as Score:
                     state.score += 1
-                    return state
                 case _ as ResetScore:
                     state.score = 0
-                    return state
                 default:
-                    return state
+                 break;
             }
         }
     }
@@ -43,23 +40,20 @@ final class ReCombineTests: XCTestCase {
         struct State: Equatable {
             var score = 0
         }
-        static func reducer(state: State, action: Action) -> State {
-            var state = state
+        static func reducer(state: inout State, action: Action) {
             switch action {
                 case _ as Score:
                     state.score += 1
-                    return state
                 case _ as ResetScore:
                     state.score = 0
-                    return state
                 default:
-                    return state
+                break;
             }
         }
     }
     
-    static func lastActionIsAction2Reducer(state: Bool, action: Action) -> Bool {
-        return action is Action2
+    static func lastActionIsAction2Reducer(state: inout Bool, action: Action)  {
+        state =  action is Action2
     }
     
     static let reducer: ReducerFn<ScoreboardState> = combineReducers(

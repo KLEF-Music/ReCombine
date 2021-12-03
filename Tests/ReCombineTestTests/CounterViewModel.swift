@@ -10,20 +10,17 @@ struct Increment: Action {}
 struct Decrement: Action {}
 struct Reset: Action {}
 
-func reducer(state: CounterState, action: Action) -> CounterState {
+func reducer(state: inout CounterState, action: Action) {
     var state = state
     switch action {
         case _ as Increment:
             state.count += 1
-            return state
         case _ as Decrement:
             state.count -= 1
-            return state
         case _ as Reset:
             state.count = 0
-            return state
         default:
-            return state
+            break;
     }
 }
 

@@ -51,7 +51,7 @@ extension CustomEquatable where Self: Equatable {
 ///     }
 /// }
 /// ```
-public typealias ReducerFn<S> = (S, Action) -> S
+public typealias ReducerFn<S> = (inout S, Action) -> Void
 
 /// A generic representation of a selector function.
 ///
@@ -137,7 +137,7 @@ open class Store<S>: Publisher {
     /// store.dispatch(action: Increment())
     /// ```
     open func dispatch(action: Action) {
-        state = reducer(state, action)
+        reducer(&state, action)
         stateSubject.send(state)
         actionSubject.send(action)
     }
