@@ -12,8 +12,16 @@ let package = Package(
         .library(name: "ReCombine", targets: ["ReCombine"]),
         .library(name: "ReCombineTest", targets: ["ReCombineTest"]),
     ],
+    dependencies: [
+        // Here we define our package's external dependencies
+        // and from where they can be fetched:
+        .package(
+            url: "https://github.com/pointfreeco/swift-case-paths",
+            from: "0.7.0"
+        )
+    ],
     targets: [
-        .target(name: "ReCombine", dependencies: []),
+        .target(name: "ReCombine", dependencies: ["CasePaths"]),
         .testTarget(name: "ReCombineTests", dependencies: ["ReCombine"]),
         .target(name: "ReCombineTest", dependencies: ["ReCombine"]),
         .testTarget(name: "ReCombineTestTests", dependencies: ["ReCombine", "ReCombineTest"]),

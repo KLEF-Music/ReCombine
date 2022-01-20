@@ -51,7 +51,7 @@ extension CustomEquatable where Self: Equatable {
 ///     }
 /// }
 /// ```
-public typealias ReducerFn<S> = (S, Action) -> S
+public typealias ReducerFn<S> = (inout S, Action) -> Void
 
 /// A generic representation of a selector function.
 ///
@@ -114,17 +114,12 @@ open class Store<S>: Publisher {
     /// Creates a new Store.
     /// - Parameter reducer: a single reducer function which will handle reducing state for all actions dispatched to the store.
     /// - Parameter initialState: the initial state.  This state will be used by consumers before the first action is dispatched.
-    /// - Parameter effects: action based side-effects.  Each `Effect` element is processed for the lifetime of the `Store` instance.
-    public init(reducer: @escaping ReducerFn<S>, initialState: S, effects: [Effect] = [], epics: [Epic<S>] = []) {
+    /// - Parameter epics: action based side-effects.  Each `Epic` element is processed for the lifetime of the `Store` instance.
+    public init(reducer: @escaping ReducerFn<S>, initialState: S, epics: [Epic<S>] = []) {
         self.reducer = reducer
         state = initialState
         stateSubject = CurrentValueSubject(initialState)
         actionSubject = PassthroughSubject()
-
-        for effect in effects {
-            // Effects registered through init are maintained for the lifecycle of the Store.
-            register(effect).store(in: &cancellableSet)
-        }
 
         for epic in epics {
             // Effects registered through init are maintained for the lifecycle of the Store.
@@ -142,7 +137,7 @@ open class Store<S>: Publisher {
     /// store.dispatch(action: Increment())
     /// ```
     open func dispatch(action: Action) {
-        state = reducer(state, action)
+        reducer(&state, action)
         stateSubject.send(state)
         actionSubject.send(action)
     }
@@ -169,41 +164,6 @@ open class Store<S>: Publisher {
     open func receive<T>(subscriber: T) where T: Subscriber, Failure == T.Failure, Output == T.Input {
         stateSubject.receive(subscriber: subscriber)
     }
-
-    /// Registers an effect that processes from when this function is called until the returned `AnyCancellable` instance in cancelled.
-    ///
-    /// This can be useful for:
-    /// 1. Effects that should not process for the entire lifetime of the `Store` instance.
-    /// 2. Effects that need to capture a particular scope in it's `source` closure.
-    ///
-    /// The following SwiftUI example shows these uses:
-    /// 1. Processing the `showAlert` `Effect` for the lifetime of the `Model` only.  This is done by storing the returned `AnyCancellable` instance in `cancellableSet`.  Because `cancellableSet` is a instance of `Set<AnyCancellable>`, it will automatically call `cancel()` when on each element when `Model` is deinitialized.
-    /// 2. Capturing `self` inside the `showAlert` Effect's source closure.
-    /// ```
-    /// class Model: ObservableObject {
-    ///     @Published var showAlert: Bool = false
-    ///     private var cancellableSet: Set<AnyCancellable> = []
-    ///
-    ///     init(store: Store<GetPostError>) {
-    ///         let showAlertOnError = Effect(dispatch: false) { actions in
-    ///             actions.ofType(GetPostError.self)
-    ///                 .handleEvents(receiveOutput: { [weak self] _ in
-    ///                     self?.showAlert = true
-    ///                 })
-    ///                 .eraseActionType()
-    ///                 .eraseToAnyPublisher()
-    ///         }
-    ///         store.register(showAlertOnError)
-    ///     }
-    /// }
-    /// ```
-    /// - Parameter effect: action based side-effect.  It is processed until the returned `AnyCancellable` instance is cancelled.
-    open func register(_ effect: Effect) -> AnyCancellable {
-        return effect.source(actionSubject.eraseToAnyPublisher())
-            .filter { _ in return effect.dispatch }
-            .sink(receiveValue: { [weak self] action in self?.dispatch(action: action) })
-    }
-
 
     /// Registers an epic that processes from when this function is called until the returned `AnyCancellable` instance in cancelled.
     ///

@@ -7,6 +7,8 @@
 //  Licensed under Apache License 2.0
 //
 
+import CasePaths
+
 /// Combines multiple reducer functions into a single reducer function.  Each reducer function must reduce the same type.
 /// - Parameter reducers: reducers to be combined into a single reducer.
 ///
@@ -24,8 +26,16 @@
 /// ```
 public func combineReducers<S>(_ reducers: ReducerFn<S>...) -> ReducerFn<S> {
     return { (state, action) in
-        reducers.reduce(state) { (accumulatedState, reducer) in
-            reducer(accumulatedState, action)
+        reducers.forEach {
+            $0(&state, action)
+        }
+    }
+}
+
+public func combineReducers<S>(array: [ReducerFn<S>]) -> ReducerFn<S> {
+    return { (state, action) in
+        array.forEach {
+            $0(&state, action)
         }
     }
 }
@@ -58,8 +68,29 @@ public func combineReducers<S>(_ reducers: ReducerFn<S>...) -> ReducerFn<S> {
 /// ```
 public func forKey<S, K>(_ keyPath: WritableKeyPath<S, K>, use reducer: @escaping ReducerFn<K>) -> ReducerFn<S> {
     return { (state, action) in
-        var state = state
-        state[keyPath: keyPath] = reducer(state[keyPath: keyPath], action)
-        return state
+        reducer(&state[keyPath: keyPath], action)
     }
 }
+
+
+public typealias TypedReducer<S, A> = (inout S, A) -> Void
+
+public func typedReducer<S, SubAction>(_ reducer: @escaping TypedReducer<S, SubAction>) -> ReducerFn<S> {
+    return { state, action in
+        if let typeAction = action  as? SubAction {
+            reducer(&state, typeAction)
+        }
+    }
+}
+
+public func typedReducer<S, ParentAction: Action, SubAction>(
+    _ casePath: CasePath<ParentAction, SubAction>,
+    _ reducer: @escaping TypedReducer<S, SubAction>
+) -> ReducerFn<S> {
+    return typedReducer { (state, action: ParentAction)  in
+        if let typeAction = casePath.extract(from: action) {
+            reducer(&state, typeAction)
+        }
+    }
+}
+

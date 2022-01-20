@@ -61,9 +61,9 @@ public class MockStore<S>: Store<S> {
     public override func receive<T>(subscriber: T) where T: Subscriber, Failure == T.Failure, Output == T.Input {
         mockStateSubject.receive(subscriber: subscriber)
     }
-    
-    public override func register(_ effect: Effect) -> AnyCancellable {
-        return effect.source(mockActionSubject.eraseToAnyPublisher())
+
+    public override func register(_ effect: Epic<S>) -> AnyCancellable {
+        return effect.source(StatePublisher(storeSubject: mockStateSubject), mockActionSubject.eraseToAnyPublisher())
             .filter { _ in return effect.dispatch }
             .sink(receiveValue: { [weak self] action in self?.dispatch(action: action) })
     }

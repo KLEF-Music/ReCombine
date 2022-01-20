@@ -19,17 +19,14 @@ final class ReCombineTests: XCTestCase {
         struct State: Equatable {
             var score = 0
         }
-        static func reducer(state: State, action: Action) -> State {
-            var state = state
+        static func reducer(state: inout State, action: Action) {
             switch action {
                 case _ as Score:
                     state.score += 1
-                    return state
                 case _ as ResetScore:
                     state.score = 0
-                    return state
                 default:
-                    return state
+                 break;
             }
         }
     }
@@ -43,23 +40,20 @@ final class ReCombineTests: XCTestCase {
         struct State: Equatable {
             var score = 0
         }
-        static func reducer(state: State, action: Action) -> State {
-            var state = state
+        static func reducer(state: inout State, action: Action) {
             switch action {
                 case _ as Score:
                     state.score += 1
-                    return state
                 case _ as ResetScore:
                     state.score = 0
-                    return state
                 default:
-                    return state
+                break;
             }
         }
     }
     
-    static func lastActionIsAction2Reducer(state: Bool, action: Action) -> Bool {
-        return action is Action2
+    static func lastActionIsAction2Reducer(state: inout Bool, action: Action)  {
+        state =  action is Action2
     }
     
     static let reducer: ReducerFn<ScoreboardState> = combineReducers(
@@ -77,34 +71,34 @@ final class ReCombineTests: XCTestCase {
     struct Action5: Action {}
     struct Action6: Action {}
     
-    static let doesDispatch = Effect(dispatch: true) { action in
+    static let doesDispatch = Epic<ScoreboardState>(dispatch: true) { action in
         action.ofType(Action1.self)
             .map { _ in Action2() }
             .eraseActionType()
             .eraseToAnyPublisher()
     }
     
-    static let doesNotDispatch = Effect(dispatch: false) { action in
+    static let doesNotDispatch = Epic<ScoreboardState>(dispatch: false) { action in
         action.ofType(Action2.self)
             .map { _ in ResetScore() }
             .eraseActionType()
             .eraseToAnyPublisher()
     }
     
-    static let registerThisLater = Effect(dispatch: true) { action in
+    static let registerThisLater = Epic<ScoreboardState> { action in
         action.ofType(Home.Score.self)
             .map { _ in Away.Score() }
             .eraseActionType()
             .eraseToAnyPublisher()
     }
 
-    var store = Store(reducer: ReCombineTests.reducer, initialState: ScoreboardState(), effects: [ReCombineTests.doesDispatch, ReCombineTests.doesNotDispatch])
+    var store = Store(reducer: ReCombineTests.reducer, initialState: ScoreboardState(), epics: [ReCombineTests.doesDispatch, ReCombineTests.doesNotDispatch])
     
     var cancellable: AnyCancellable?
     var cancellableSet: Set<AnyCancellable> = []
     
     override func setUp() {
-        store = Store(reducer: ReCombineTests.reducer, initialState: ScoreboardState(), effects: [ReCombineTests.doesDispatch, ReCombineTests.doesNotDispatch])
+        store = Store(reducer: ReCombineTests.reducer, initialState: ScoreboardState(), epics: [ReCombineTests.doesDispatch, ReCombineTests.doesNotDispatch])
     }
     
     // MARK: - Store
