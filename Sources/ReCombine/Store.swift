@@ -179,3 +179,34 @@ open class Store<S>: Publisher {
             .sink(receiveValue: { [weak self] action in self?.dispatch(action: action) })
     }
 }
+
+
+extension Store {
+
+    func subStore<SubState>(
+        toLocalState: @escaping  (S) -> SubState,
+        epics: Epic<SubState>
+    ) ->  Store<SubState> {
+        // create a substore with the same initial state
+        let subStore =  Store<SubState>(reducer: { localState, _ in
+            // TODO: map actions
+            localState = toLocalState(self.state)
+        }, initialState: toLocalState(self.state), epics: [epics])
+
+        // notify the substore of parent updates
+        self
+            .dropFirst()
+            .sink(receiveValue: {  [weak subStore] in  subStore?.state = toLocalState($0) })
+            .store(in: &self.cancellableSet)
+
+        // return the new substore
+        return subStore
+    }
+
+}
+
+
+extension Store: ObservableObject {
+
+
+}
