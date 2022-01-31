@@ -52,7 +52,20 @@ public extension StatePublisher  {
         return state()
     }
 #endif
-    
+
+    func map<T>(_ mapFn: @escaping (S) -> T) -> StatePublisher<T> {
+        return StatePublisher<T>(
+            changes: changes.map{ return mapFn($0) }.eraseToAnyPublisher(),
+            state: { mapFn(self.state()) }
+        )
+    }
+
+    func map<T>(_ keyPath: KeyPath<S, T>) -> StatePublisher<T> {
+        return StatePublisher<T>(
+            changes: changes.map(keyPath).eraseToAnyPublisher(),
+            state: { self.state()[keyPath: keyPath] }
+        )
+    }
 }
 
 extension Epic {
